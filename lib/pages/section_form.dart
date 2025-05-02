@@ -135,9 +135,11 @@ class _AddSectionFormState extends State<AddSectionForm> {
                             name: _sectionNameController.text,
                             description: _sectionDescriptionController.text,
                             courseId: '',
-                            materials: materials,
                           );
-                          Navigator.pop(context, section);
+                          Navigator.pop(context, {
+                            'section': section,
+                            'materials': materials,
+                          });
                         }
                       },
                       child: const Text('Añadir sección'),

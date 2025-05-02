@@ -21,6 +21,22 @@ class CourseMaterial {
     sectionId: json['sectionId'],
   );
 
+  CourseMaterial copyWith({
+    String? id,
+    String? title,
+    String? url,
+    int? sizeBytes,
+    String? sectionId,
+  }) {
+    return CourseMaterial(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      url: url ?? this.url,
+      sizeBytes: sizeBytes ?? this.sizeBytes,
+      sectionId: sectionId ?? this.sectionId,
+    );
+  }
+
   Map<String, dynamic> toJson() => {
     'title': title,
     'url': url,

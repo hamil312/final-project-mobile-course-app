@@ -24,17 +24,7 @@ class CourseDetailPage extends StatelessWidget {
             _buildInfoCard('Aditional Data', [
               for (var entry in course.themes)
                 _buildInfoRow('Tema', entry),
-              for (var entry in course.sections)
-                _buildInfoCard(
-                  entry.name,
-                  [
-                    _buildInfoRow('id', entry.id),
-                    _buildInfoRow('Name', entry.name),
-                    _buildInfoRow('Description', entry.description),
-                      for (var material in entry.materials)
-                        _buildInfoRow('Material', material.url),
-                  ],
-                ),
+              
             ]),
           ],
         ),

@@ -1,3 +1,5 @@
+import 'package:final_project/models/course_material.dart';
+import 'package:final_project/models/section.dart';
 import 'package:final_project/repositories/auth_repository.dart';
 import 'package:get/get.dart';
 
@@ -29,24 +31,44 @@ class CourseController extends GetxController {
     }
   }
 
-  Future<void> addCourse(Course course) async {
+  Future<void> addCourse(
+    Course course,
+    List<Section> sections,
+    Map<String, List<CourseMaterial>> sectionMaterials,
+  ) async {
     try {
+      isLoading.value = true;
+      error.value = '';
+
       final authorId = await authRepository.getCurrentUserId();
       if (authorId == null) throw Exception('No hay sesión activa');
 
-      final courseWithOwner = Course(
-        id: course.id,
-        name: course.name,
-        description: course.description,
-        authorId: authorId,
-        themes: course.themes,
-        sections: course.sections,
+      final createdCourse = await repository.createCourse(
+        course.copyWith(id: '', authorId: authorId),
       );
 
-      final newCourse = await repository.createCourse(courseWithOwner);
-      courses.add(newCourse);
+      final courseId = createdCourse.id;
+
+      for (final section in sections) {
+        final createdSection = await repository.createSection(
+          section.copyWith(courseId: courseId),
+        );
+
+        final sectionId = createdSection.id;
+
+        final materials = sectionMaterials[section.name] ?? [];
+        for (final material in materials) {
+          await repository.createMaterial(
+            material.copyWith(sectionId: sectionId),
+          );
+        }
+      }
+
+      courses.add(createdCourse);
     } catch (e) {
       error.value = e.toString();
+    } finally {
+      isLoading.value = false;
     }
   }
 

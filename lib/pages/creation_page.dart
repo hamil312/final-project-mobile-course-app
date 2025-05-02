@@ -1,6 +1,7 @@
 import 'package:final_project/controllers/auth_controller.dart';
 import 'package:final_project/controllers/course_controller.dart';
 import 'package:final_project/models/course.dart';
+import 'package:final_project/models/course_material.dart';
 import 'package:final_project/models/section.dart';
 import 'package:final_project/pages/section_form.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +20,7 @@ class _CourseCreatorState extends State<CourseCreator> {
   final _descriptionController = TextEditingController();
   final _themeController = TextEditingController();
   final List<Section> sections = [];
+  final Map<String, List<CourseMaterial>> sectionMaterials = {};
   final List<String> themes = [];
 
   final CourseController courseController = Get.find();
@@ -31,10 +33,9 @@ class _CourseCreatorState extends State<CourseCreator> {
         description: _descriptionController.text,
         authorId: null,
         themes: themes,
-        sections: sections,
       );
 
-      await controller.addCourse(course);
+      await controller.addCourse(course, sections, sectionMaterials);
 
       if (controller.error.value.isEmpty) {
         Get.snackbar('Éxito', 'Curso creado correctamente');
@@ -48,7 +49,7 @@ class _CourseCreatorState extends State<CourseCreator> {
   }
 
   Future<void> _showAddSectionDialog() async {
-    final result = await showModalBottomSheet<Section>(
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
       builder: (context) => Padding(
@@ -58,12 +59,18 @@ class _CourseCreatorState extends State<CourseCreator> {
           left: 16,
           right: 16,
         ),
-        child: AddSectionForm(),
+        child: const AddSectionForm(),
       ),
     );
 
     if (result != null) {
-      setState(() => sections.add(result));
+      final Section section = result['section'];
+      final List<CourseMaterial> materials = result['materials'];
+
+      setState(() {
+        sections.add(section);
+        sectionMaterials[section.name] = materials;
+      });
     }
   }
 
@@ -181,6 +188,7 @@ class _CourseCreatorState extends State<CourseCreator> {
                               icon: const Icon(Icons.delete),
                               onPressed: () {
                                 setState(() {
+                                  sectionMaterials.remove(sections[index].name);
                                   sections.removeAt(index);
                                 });
                               },

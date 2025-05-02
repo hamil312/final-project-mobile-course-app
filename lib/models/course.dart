@@ -6,9 +6,8 @@ class Course {
   final String description;
   final String? authorId;
   final List<String> themes;
-  final List<Section> sections;
 
-  Course({required this.id, required this.name, required this.authorId, required this.themes, required this.sections, required this.description});
+  Course({required this.id, required this.name, required this.authorId, required this.themes, required this.description});
 
   factory Course.fromJson(Map<String, dynamic> json) {
     return Course(
@@ -17,11 +16,25 @@ class Course {
       description: json['description'] ?? 'No description available',
       authorId: json['authorId'],
       themes: List<String>.from(json['themes'] ?? []),
-      sections: (json['sections'] as List<dynamic>? ?? [])
-          .map((sectionJson) => Section.fromJson(sectionJson))
-          .toList(),
     );
   }
 
-  Map<String, dynamic> toJson() => {'name': name, 'authorId': authorId, 'description': description, 'themes': themes, 'sections': sections.map((section) => section.toJson()).toList()};
+  Course copyWith({
+    String? id,
+    String? name,
+    String? description,
+    String? authorId,
+    List<String>? themes,
+    List<Section>? sections,
+  }) {
+    return Course(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      authorId: authorId ?? this.authorId,
+      themes: themes ?? this.themes,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {'name': name, 'authorId': authorId, 'description': description, 'themes': themes};
 }
