@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
-
 import 'package:final_project/models/course.dart';
 import 'package:final_project/pages/course_detail_page.dart';
 
 class CourseCard extends StatelessWidget {
   final Course course;
+  final String? userId;
+  final bool isAdmin;
+  final List<String> enrolledCourseIds;
 
-  const CourseCard({super.key, required this.course});
+  const CourseCard({
+    super.key,
+    required this.course,
+    required this.userId,
+    required this.isAdmin,
+    required this.enrolledCourseIds,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -33,16 +41,18 @@ class CourseCard extends StatelessWidget {
             Text(course.name),
             const SizedBox(height: 4.0),
             Text(course.description),
-            const SizedBox(height: 4.0),
-            Text(course.description),
-            const SizedBox(height: 4.0)
           ],
         ),
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => CourseDetailPage(course: course),
+              builder: (context) => CourseDetailPage(
+                course: course,
+                userId: userId,
+                isAdmin: isAdmin,
+                enrolledCourseIds: enrolledCourseIds,
+              ),
             ),
           );
         },

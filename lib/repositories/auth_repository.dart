@@ -3,8 +3,9 @@ import 'package:final_project/core/constants/appwrite_constants.dart';
 
 class AuthRepository {
   final Account account;
+  final Databases databases;
 
-  AuthRepository(this.account);
+  AuthRepository(this.account, this.databases);
 
   Future<String?> getCurrentUserId() async {
     try {
@@ -59,28 +60,23 @@ class AuthRepository {
       return false;
     }
   }
-  Future<void> addUserToTeam(String role) async {
-    try {
-      final user = await account.get();
-      print('user email: ${user.email}');
-      print('teamId: ${AppwriteConstants.teamId}');
-      
-      final teamId = AppwriteConstants.teamId;
-      final teamRole = role == 'admin' ? 'admin' : 'usuario';
-      final teams = Teams(account.client);
 
-      await teams.createMembership(
-        teamId: teamId,
-        email: user.email,
-        roles: [teamRole],
-        url: 'http://localhost:57856/', // cambia esto por una URL válida
-        name: user.name,
+  Future<String?> getUserRole(String userId) async {
+    try {
+      final response = await databases.listDocuments(
+        databaseId: AppwriteConstants.databaseId,
+        collectionId: '68169008003b3fc8eb6e',
+        queries: [Query.equal('userId', userId)],
       );
 
-      print('Membership creation request sent.');
+      if (response.documents.isNotEmpty) {
+        final role = response.documents.first.data['role'];
+        return role;
+      }
+      return null;
     } catch (e) {
-      print('Error al crear membresía: $e');
-      rethrow;
+      print('Error al obtener el rol del usuario: $e');
+      return null;
     }
   }
 }

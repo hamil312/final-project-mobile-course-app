@@ -31,6 +31,20 @@ class CourseController extends GetxController {
     }
   }
 
+  Future<void> fetchCoursesByIds(List<String> courseIds) async {
+    try {
+      isLoading.value = true;
+      error.value = '';
+      final fetchedCourses = await repository.getCoursesByIds(courseIds);
+      courses.assignAll(fetchedCourses);
+    } catch (e) {
+      error.value = e.toString();
+      courses.clear();
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   Future<void> addCourse(
     Course course,
     List<Section> sections,
@@ -74,10 +88,29 @@ class CourseController extends GetxController {
 
   Future<void> deleteCourse(String courseId) async {
     try {
+      error.value = '';
+      isLoading.value = true;
+
+      final sections = await repository.getSectionsByCourseId(courseId);
+
+      for (final section in sections) {
+
+        final materials = await repository.getMaterialsBySectionId(section.id);
+
+        for (final material in materials) {
+          await repository.deleteMaterial(material.id);
+        }
+
+        await repository.deleteSection(section.id);
+      }
+
       await repository.deleteCourse(courseId);
+
       courses.removeWhere((course) => course.id == courseId);
     } catch (e) {
       error.value = e.toString();
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -91,6 +124,24 @@ class CourseController extends GetxController {
       }
     } catch (e) {
       error.value = e.toString();
+    }
+  }
+
+  Future<List<Section>> getSectionsByCourseId(String courseId) async {
+    try {
+      return await repository.getSectionsByCourseId(courseId);
+    } catch (e) {
+      error.value = e.toString();
+      return [];
+    }
+  }
+
+  Future<List<CourseMaterial>> getMaterialsBySectionId(String sectionId) async {
+    try {
+      return await repository.getMaterialsBySectionId(sectionId);
+    } catch (e) {
+      error.value = e.toString();
+      return [];
     }
   }
 }

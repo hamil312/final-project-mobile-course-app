@@ -1,13 +1,17 @@
 import 'package:final_project/controllers/auth_controller.dart';
+import 'package:final_project/controllers/user_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
+import 'package:final_project/models/user.dart';
 
 class RegisterPage extends StatelessWidget {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final RxString selectedRole = 'usuario'.obs;
+  final userController = Get.find<UserController>();
+  final RxString selectedRole = 'user'.obs;
 
   RegisterPage({super.key});
 
@@ -54,16 +58,31 @@ class RegisterPage extends StatelessWidget {
                   return null;
                 },
               ),
-              Obx(() => DropdownButtonFormField<String>(
-                value: selectedRole.value,
-                items: [
-                  DropdownMenuItem(value: 'admin', child: Text('Administrador')),
-                  DropdownMenuItem(value: 'usuario', child: Text('Usuario')),
+              Obx(() => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Selecciona tu rol'),
+                  ListTile(
+                    title: const Text('Usuario'),
+                    leading: Radio<String>(
+                      value: 'user',
+                      groupValue: selectedRole.value,
+                      onChanged: (value) {
+                        if (value != null) selectedRole.value = value;
+                      },
+                    ),
+                  ),
+                  ListTile(
+                    title: const Text('Admin'),
+                    leading: Radio<String>(
+                      value: 'admin',
+                      groupValue: selectedRole.value,
+                      onChanged: (value) {
+                        if (value != null) selectedRole.value = value;
+                      },
+                    ),
+                  ),
                 ],
-                onChanged: (value) {
-                  if (value != null) selectedRole.value = value;
-                },
-                decoration: InputDecoration(labelText: 'Rol'),
               )),
               SizedBox(height: 20),
               Obx(() {
@@ -71,14 +90,21 @@ class RegisterPage extends StatelessWidget {
                   return CircularProgressIndicator();
                 }
                 return ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (_formKey.currentState!.validate()) {
-                      authController.register(
+                      await authController.register(
                         _emailController.text,
                         _passwordController.text,
                         _nameController.text,
-                        selectedRole.value,
                       );
+
+                      if (authController.error.value.isNotEmpty) return;
+
+                      final userId = await authController.getUserId();
+                      if (userId != null) {
+                        final user = User(id: '', role: selectedRole.value, userId: userId);
+                        await userController.addUser(user);
+                      }
                     }
                   },
                   child: Text('Registrarse'),

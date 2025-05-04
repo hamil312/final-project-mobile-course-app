@@ -40,7 +40,7 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<void> register(String email, String password, String name, String role) async {
+  Future<void> register(String email, String password, String name) async {
     isLoading.value = true;
     error.value = '';
 
@@ -51,11 +51,7 @@ class AuthController extends GetxController {
         name: name,
       );
 
-      await _authRepository.login(email: email, password: password);
-
-      await _authRepository.addUserToTeam(role);
-
-      Get.offAll(() => HomePage());
+      await login(email, password);
     } catch (e) {
       error.value = e.toString();
     } finally {
@@ -63,13 +59,25 @@ class AuthController extends GetxController {
     }
   }
 
-
   Future<void> logout() async {
     try {
       await _authRepository.logout();
       Get.offAll(() => LoginPage());
     } catch (e) {
       error.value = e.toString();
+    }
+  }
+
+  Future<String?> getCurrentUserRole() async {
+    try {
+      final userId = await _authRepository.getCurrentUserId();
+      if (userId == null) return null;
+
+      final role = await _authRepository.getUserRole(userId);
+      return role;
+    } catch (e) {
+      error.value = 'Error al obtener el rol: $e';
+      return null;
     }
   }
 }
