@@ -1,9 +1,19 @@
+import 'package:appwrite/appwrite.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:final_project/core/constants/appwrite_constants.dart';
 import 'package:final_project/models/course_material.dart';
 import 'package:final_project/models/section.dart';
 import 'package:flutter/material.dart';
 
 class AddSectionForm extends StatefulWidget {
-  const AddSectionForm({super.key});
+  final Section? initialSection;
+  final List<CourseMaterial>? initialMaterials;
+
+  const AddSectionForm({
+    super.key,
+    this.initialSection,
+    this.initialMaterials,
+  });
 
   @override
   State<AddSectionForm> createState() => _AddSectionFormState();
@@ -17,7 +27,27 @@ class _AddSectionFormState extends State<AddSectionForm> {
   final _materialUrlController = TextEditingController();
   final _materialSizeController = TextEditingController();
 
+  static final Client client = Client()
+    ..setEndpoint(AppwriteConstants.endpoint)
+    ..setProject(AppwriteConstants.projectId)
+    ..setSelfSigned();
+  
+  late final Storage storage;
+
   final List<CourseMaterial> materials = [];
+
+  @override
+  void initState() {
+    super.initState();
+    storage = Storage(client);
+    if (widget.initialSection != null) {
+      _sectionNameController.text = widget.initialSection!.name;
+      _sectionDescriptionController.text = widget.initialSection!.description;
+    }
+    if (widget.initialMaterials != null) {
+      materials.addAll(widget.initialMaterials!);
+    }
+  }
 
   @override
   void dispose() {
@@ -29,29 +59,46 @@ class _AddSectionFormState extends State<AddSectionForm> {
     super.dispose();
   }
 
-  void _addMaterial() {
-    final title = _materialTitleController.text.trim();
-    final url = _materialUrlController.text.trim();
-    final sizeText = _materialSizeController.text.trim();
+  Future<void> _pickAndUploadFile() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
 
-    if (title.isNotEmpty && url.isNotEmpty && int.tryParse(sizeText) != null) {
-      setState(() {
-        materials.add(CourseMaterial(
-          id: '',
-          title: title,
-          url: url,
-          sizeBytes: int.parse(sizeText),
-          sectionId: '',
-        ));
-        _materialTitleController.clear();
-        _materialUrlController.clear();
-        _materialSizeController.clear();
-      });
+    if (result != null && result.files.single.bytes != null) {
+      final fileBytes = result.files.single.bytes!;
+      final fileName = result.files.single.name;
+
+      try {
+        final response = await storage.createFile(
+          bucketId: AppwriteConstants.bucketId,
+          fileId: ID.unique(),
+          file: InputFile.fromBytes(
+            bytes: fileBytes,
+            filename: fileName,
+          ),
+        );
+
+        final url = 'https://fra.cloud.appwrite.io/v1/storage/buckets/${AppwriteConstants.bucketId}/files/${response.$id}/view?project=${AppwriteConstants.projectId}&mode=admin';
+
+        setState(() {
+          materials.add(CourseMaterial(
+            id: '',
+            title: fileName,
+            url: url,
+            sizeBytes: fileBytes.length,
+            sectionId: '',
+          ));
+        });
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al subir archivo: $e')),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.initialSection != null;
+
     return SafeArea(
       child: Form(
         key: _formKey,
@@ -61,7 +108,10 @@ class _AddSectionFormState extends State<AddSectionForm> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Añadir Sección', style: Theme.of(context).textTheme.titleLarge),
+                Text(
+                  isEditing ? 'Editar Sección' : 'Añadir Sección',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
                 TextFormField(
                   controller: _sectionNameController,
                   decoration: const InputDecoration(labelText: 'Nombre de la sección'),
@@ -78,18 +128,10 @@ class _AddSectionFormState extends State<AddSectionForm> {
                   controller: _materialTitleController,
                   decoration: const InputDecoration(labelText: 'Título'),
                 ),
-                TextFormField(
-                  controller: _materialUrlController,
-                  decoration: const InputDecoration(labelText: 'URL'),
-                ),
-                TextFormField(
-                  controller: _materialSizeController,
-                  decoration: const InputDecoration(labelText: 'Tamaño (bytes)'),
-                  keyboardType: TextInputType.number,
-                ),
-                ElevatedButton(
-                  onPressed: _addMaterial,
-                  child: const Text('Añadir material'),
+                ElevatedButton.icon(
+                  onPressed: _pickAndUploadFile,
+                  icon: const Icon(Icons.upload_file),
+                  label: const Text('Subir PDF desde dispositivo'),
                 ),
                 if (materials.isNotEmpty)
                   Container(
@@ -131,7 +173,7 @@ class _AddSectionFormState extends State<AddSectionForm> {
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
                           final section = Section(
-                            id: '',
+                            id: widget.initialSection?.id ?? '',
                             name: _sectionNameController.text,
                             description: _sectionDescriptionController.text,
                             courseId: '',
@@ -142,7 +184,7 @@ class _AddSectionFormState extends State<AddSectionForm> {
                           });
                         }
                       },
-                      child: const Text('Añadir sección'),
+                      child: Text(isEditing ? 'Actualizar sección' : 'Añadir sección'),
                     ),
                   ],
                 ),

@@ -1,9 +1,13 @@
 import 'package:final_project/controllers/course_controller.dart';
+import 'package:final_project/controllers/enrollment_controller.dart';
+import 'package:final_project/models/enrollment.dart';
+import 'package:final_project/pages/course_progress_page.dart';
 import 'package:flutter/material.dart';
 import 'package:final_project/models/course.dart';
 import 'package:final_project/models/section.dart';
 import 'package:final_project/models/course_material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CourseDetailPage extends StatefulWidget {
   final Course course;
@@ -25,6 +29,7 @@ class CourseDetailPage extends StatefulWidget {
 
 class _CourseDetailPageState extends State<CourseDetailPage> {
   final courseController = Get.find<CourseController>();
+  final enrollmentController = Get.find<EnrollmentController>();
   List<Section> sections = [];
   Map<String, List<CourseMaterial>> materialsBySection = {};
   bool isLoading = true;
@@ -61,16 +66,41 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
     }
   }
 
-  void _enrollInCourse() {
-    // Aquí deberías implementar tu lógica para inscribirse en el curso
-    // Luego podrías actualizar el estado para refrescar la vista
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Te has inscrito en el curso.')),
-    );
-    setState(() {
-      widget.enrolledCourseIds.add(widget.course.id);
-    });
-    _loadSectionsAndMaterials();
+  void _enrollInCourse() async {
+    final enrollmentController = Get.find<EnrollmentController>();
+    final courseId = widget.course.id;
+    final userId = widget.userId;
+
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se puede inscribir sin sesión iniciada.')),
+      );
+      return;
+    }
+
+    try {
+      await enrollmentController.addEnrollment(
+        Enrollment(
+          id: '',
+          userId: userId,
+          courseId: courseId,
+        ),
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Te has inscrito en el curso.')),
+      );
+
+      setState(() {
+        widget.enrolledCourseIds.add(courseId);
+      });
+
+      _loadSectionsAndMaterials();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al inscribirse: $e')),
+      );
+    }
   }
 
   @override
@@ -96,7 +126,28 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
             if (isEnrolled)
               isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : _buildSections()
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildSections(),
+                        const SizedBox(height: 20),
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CourseProgressPage(courseId: widget.course.id),
+                              ),
+                            );
+
+                            await enrollmentController.fetchEnrollments(); // <- refresca al volver
+                            setState(() {}); // fuerza rebuild si es necesario
+                          },
+                          icon: const Icon(Icons.pie_chart),
+                          label: const Text('Ver Progreso'),
+                        ),
+                      ],
+                    )
             else
               Center(
                 child: ElevatedButton(
@@ -111,6 +162,8 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
   }
 
   Widget _buildSections() {
+    final enrollmentController = Get.find<EnrollmentController>();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: sections.map((section) {
@@ -118,12 +171,26 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
         return _buildInfoCard('Sección: ${section.name}', [
           _buildInfoRow('Descripción', section.description),
           const SizedBox(height: 8),
-          Text('Materiales:', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('Materiales:', style: TextStyle(fontWeight: FontWeight.bold)),
           for (var material in materials)
             ListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(material.title),
               subtitle: Text(material.url),
+              onTap: () async {
+                await launchUrl(Uri.parse(material.url));
+
+                if (widget.userId != null) {
+                  await enrollmentController.markMaterialAsViewed(
+                    widget.userId!,
+                    widget.course.id,
+                    material.id,
+                  );
+
+                  await enrollmentController.fetchEnrollments();
+                  setState(() {});
+                }
+              },
             ),
         ]);
       }).toList(),

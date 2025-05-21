@@ -31,6 +31,19 @@ class CourseController extends GetxController {
     }
   }
 
+  Future<void> fetchAllCourses() async {
+    try {
+      isLoading.value = true;
+      final fetchedCourses = await repository.getAllCourses();
+      courses.assignAll(fetchedCourses);
+    } catch (e) {
+      error.value = e.toString();
+      courses.clear();
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   Future<void> fetchCoursesByIds(List<String> courseIds) async {
     try {
       isLoading.value = true;
@@ -115,15 +128,47 @@ class CourseController extends GetxController {
   }
 
 
-  Future<void> updateCourse(String authorId, Course course) async {
+  Future<void> updateCourse(
+    Course updatedCourse,
+    List<Section> updatedSections,
+    Map<String, List<CourseMaterial>> updatedSectionMaterials,
+  ) async {
     try {
-      final updatedCourse = await repository.updateCourse(authorId, course);
-      final index = courses.indexWhere((u) => u.id == authorId);
+      isLoading.value = true;
+      error.value = '';
+
+      final course = await repository.updateCourse(updatedCourse);
+
+      final oldSections = await repository.getSectionsByCourseId(course.id);
+      for (final section in oldSections) {
+        final materials = await repository.getMaterialsBySectionId(section.id);
+        for (final material in materials) {
+          await repository.deleteMaterial(material.id);
+        }
+        await repository.deleteSection(section.id);
+      }
+
+      for (final section in updatedSections) {
+        final createdSection = await repository.createSection(
+          section.copyWith(courseId: course.id),
+        );
+        final sectionId = createdSection.id;
+        final materials = updatedSectionMaterials[section.name] ?? [];
+        for (final material in materials) {
+          await repository.createMaterial(
+            material.copyWith(sectionId: sectionId),
+          );
+        }
+      }
+
+      final index = courses.indexWhere((c) => c.id == course.id);
       if (index != -1) {
-        courses[index] = updatedCourse;
+        courses[index] = course;
       }
     } catch (e) {
       error.value = e.toString();
+    } finally {
+      isLoading.value = false;
     }
   }
 

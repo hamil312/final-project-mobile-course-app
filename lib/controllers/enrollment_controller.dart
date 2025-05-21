@@ -1,3 +1,5 @@
+import 'package:final_project/controllers/course_controller.dart';
+import 'package:final_project/models/course_material.dart';
 import 'package:final_project/repositories/auth_repository.dart';
 import 'package:final_project/repositories/course_repository.dart';
 import 'package:get/get.dart';
@@ -52,6 +54,7 @@ class EnrollmentController extends GetxController {
 
       enrollments.add(createdEnrollment);
     } catch (e) {
+      print('Error en addEnrollment: $e');
       error.value = e.toString();
     } finally {
       isLoading.value = false;
@@ -84,5 +87,53 @@ class EnrollmentController extends GetxController {
     } catch (e) {
       error.value = e.toString();
     }
+  }
+
+Future<void> markMaterialAsViewed(String userId, String courseId, String materialId) async {
+    try {
+      final enrollment = enrollments.firstWhereOrNull((e) => e.courseId == courseId);
+      if (enrollment == null) return;
+
+      if (!enrollment.viewedMaterialIds.contains(materialId)) {
+        enrollment.viewedMaterialIds.add(materialId);
+
+        await repository.updateEnrollment(enrollment.id, enrollment);
+
+        enrollments.refresh();
+      }
+    } catch (e) {
+      print('Error al marcar material como visto: $e');
+    }
+  }
+
+  int getCompletionRateForCourse(String courseId, List<CourseMaterial> allMaterials) {
+    final enrollment = enrollments.firstWhereOrNull((e) => e.courseId == courseId);
+    if (enrollment == null) return 0;
+
+    return enrollment.calculateCompletionRate(allMaterials.length);
+  }
+
+  Future<int> getTotalMaterialsForCourseU(String courseId) async {
+    try {
+      final materials = await courseRepository.getMaterialsForCourse(courseId);
+      return materials.length;
+    } catch (e) {
+      error.value = 'Error al obtener materiales: $e';
+      return 0;
+    }
+  }
+
+  Future<int> getTotalMaterialsForCourse(String courseId) async {
+    final courseController = Get.find<CourseController>();
+
+    final sections = await courseController.getSectionsByCourseId(courseId);
+    int totalMaterials = 0;
+
+    for (final section in sections) {
+      final materials = await courseController.getMaterialsBySectionId(section.id);
+      totalMaterials += materials.length;
+    }
+
+    return totalMaterials;
   }
 }

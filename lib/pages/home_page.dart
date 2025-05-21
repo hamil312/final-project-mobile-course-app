@@ -1,11 +1,18 @@
 import 'package:final_project/controllers/enrollment_controller.dart';
+import 'package:final_project/models/course_material.dart';
 import 'package:final_project/pages/course_card.dart';
 import 'package:final_project/pages/creation_page.dart';
+import 'package:final_project/pages/update_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:final_project/controllers/auth_controller.dart';
 import 'package:final_project/controllers/course_controller.dart';
+
+enum ViewMode { myCourses, feed }
+
+ViewMode currentView = ViewMode.myCourses;
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -49,9 +56,8 @@ class _HomePageState extends State<HomePage> {
         await courseController.fetchCoursesByIds(enrolledCourseIds);
       }
     } else {
-      // Puedes manejar el caso de error aquí (por ejemplo, cerrar sesión o mostrar un error)
       debugPrint('Usuario no autenticado');
-      Get.find<AuthController>().logout(); // o navega al login
+      Get.find<AuthController>().logout();
     }
   }
 
@@ -73,6 +79,12 @@ class _HomePageState extends State<HomePage> {
           if (controller.isLoading.value) {
             return const Center(child: CircularProgressIndicator());
           }
+          final coursesToShow = controller.courses.where((course) {
+            if (currentView == ViewMode.myCourses && !isAdmin) {
+              return enrolledCourseIds.contains(course.id);
+            }
+            return true;
+          }).toList();
 
           return Column(
             children: [
@@ -86,11 +98,47 @@ class _HomePageState extends State<HomePage> {
                   'Error: ${controller.error.value}',
                   style: const TextStyle(color: Colors.red),
                 ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() => currentView = ViewMode.myCourses);
+                      if (isAdmin) {
+                        courseController.fetchCourses();
+                      } else {
+                        courseController.fetchCoursesByIds(enrolledCourseIds);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: currentView == ViewMode.myCourses
+                          ? Theme.of(context).primaryColor
+                          : Colors.grey,
+                    ),
+                    child: const Text('Mis cursos'),
+                  ),
+                  const SizedBox(width: 8),
+                  if (!isAdmin)
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() => currentView = ViewMode.feed);
+                      courseController.fetchAllCourses();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: currentView == ViewMode.feed
+                          ? Theme.of(context).primaryColor
+                          : Colors.grey,
+                    ),
+                    child: const Text('Explorar cursos'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
               Expanded(
                 child: ListView.builder(
-                  itemCount: controller.courses.length,
+                  itemCount: coursesToShow.length,
                   itemBuilder: (context, index) {
-                    final course = controller.courses[index];
+                    final course = coursesToShow[index];
 
                     return Stack(
                       children: [
@@ -105,9 +153,21 @@ class _HomePageState extends State<HomePage> {
                             top: 0,
                             right: 8,
                             child: PopupMenuButton<String>(
-                              onSelected: (value) {
+                              onSelected: (value) async {
                                 if (value == 'edit') {
-                                  // Implementar edición si se desea
+                                  final sections = await courseController.getSectionsByCourseId(course.id);
+                                  final sectionMaterials = <String, List<CourseMaterial>>{};
+
+                                  for (final section in sections) {
+                                    final materials = await courseController.getMaterialsBySectionId(section.id);
+                                    sectionMaterials[section.name] = materials;
+                                  }
+
+                                  Get.to(() => CourseEditor(
+                                    course: course,
+                                    initialSections: sections,
+                                    initialSectionMaterials: sectionMaterials,
+                                  ));
                                 } else if (value == 'delete') {
                                   showDialog(
                                     context: context,

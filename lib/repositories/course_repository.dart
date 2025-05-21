@@ -27,6 +27,21 @@ class CourseRepository {
     }
   }
 
+  Future<List<Course>> getAllCourses() async {
+    try {
+      final response = await databases.listDocuments(
+        databaseId: AppwriteConstants.databaseId,
+        collectionId: collectionId,
+      );
+
+      return response.documents
+          .map((doc) => Course.fromJson(doc.data))
+          .toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<List<Course>> getCourses(String authorId) async {
     try {
       final response = await databases.listDocuments(
@@ -73,12 +88,12 @@ class CourseRepository {
     }
   }
 
-  Future<Course> updateCourse(String courseId, Course course) async {
+  Future<Course> updateCourse(Course course) async {
     try {
       final response = await databases.updateDocument(
         databaseId: AppwriteConstants.databaseId,
         collectionId: collectionId,
-        documentId: courseId,
+        documentId: course.id,
         data: course.toJson(),
       );
       return Course.fromJson(response.data);
@@ -86,6 +101,7 @@ class CourseRepository {
       rethrow;
     }
   }
+
   Future<Section> createSection(Section section) async {
     try {
       final response = await databases.createDocument(
@@ -171,5 +187,18 @@ class CourseRepository {
     } catch (e) {
       rethrow;
     }
+  }
+  Future<List<CourseMaterial>> getMaterialsForCourse(String courseId) async {
+    final response = await databases.listDocuments(
+      databaseId: AppwriteConstants.databaseId,
+      collectionId: '68065fe9000045205d3b',
+      queries: [
+        Query.equal('courseId', courseId),
+      ],
+    );
+
+    return response.documents
+        .map((doc) => CourseMaterial.fromJson(doc.data))
+        .toList();
   }
 }

@@ -7,14 +7,23 @@ import 'package:final_project/pages/section_form.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class CourseCreator extends StatefulWidget {
-  const CourseCreator({super.key});
+class CourseEditor extends StatefulWidget {
+  final Course course;
+  final List<Section> initialSections;
+  final Map<String, List<CourseMaterial>> initialSectionMaterials;
+
+  const CourseEditor({
+    super.key,
+    required this.course,
+    required this.initialSections,
+    required this.initialSectionMaterials,
+  });
 
   @override
-  State<CourseCreator> createState() => _CourseCreatorState();
+  State<CourseEditor> createState() => _CourseEditorState();
 }
 
-class _CourseCreatorState extends State<CourseCreator> {
+class _CourseEditorState extends State<CourseEditor> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -25,28 +34,30 @@ class _CourseCreatorState extends State<CourseCreator> {
 
   final CourseController courseController = Get.find();
 
+  @override
+  void initState() {
+    super.initState();
+    _nameController.text = widget.course.name;
+    _descriptionController.text = widget.course.description;
+    themes.addAll(widget.course.themes);
+    sections.addAll(widget.initialSections);
+    sectionMaterials.addAll(widget.initialSectionMaterials);
+  }
+
   Future<void> _submitCourse(CourseController controller) async {
     if (_formKey.currentState!.validate()) {
-      final course = Course(
-        id: '',
+      final updatedCourse = Course(
+        id: widget.course.id,
         name: _nameController.text,
         description: _descriptionController.text,
-        authorId: null,
+        authorId: widget.course.authorId,
         themes: themes,
       );
 
-      await controller.addCourse(course, sections, sectionMaterials);
+      await controller.updateCourse(updatedCourse, sections, sectionMaterials);
 
       if (controller.error.value.isEmpty) {
-        Get.snackbar('Éxito', 'Curso creado correctamente');
-        _nameController.clear();
-        _descriptionController.clear();
-        _themeController.clear();
-        setState(() {
-          themes.clear();
-          sections.clear();
-          sectionMaterials.clear();
-        });
+        Get.snackbar('Éxito', 'Curso actualizado correctamente');
       } else {
         Get.snackbar('Error', controller.error.value);
       }
@@ -113,7 +124,7 @@ class _CourseCreatorState extends State<CourseCreator> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Crear Curso'),
+        title: const Text('Editar Curso'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -249,7 +260,7 @@ class _CourseCreatorState extends State<CourseCreator> {
                     const SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: () => _submitCourse(controller),
-                      child: const Text('Crear Curso'),
+                      child: const Text('Actualizar Curso'),
                     ),
                   ],
                 ),
