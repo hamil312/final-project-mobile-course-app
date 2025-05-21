@@ -37,4 +37,24 @@ class Course {
   }
 
   Map<String, dynamic> toJson() => {'name': name, 'authorId': authorId, 'description': description, 'themes': themes};
+
+  factory Course.fromMap(Map<String, dynamic> map) {
+    return Course(
+      id: map['id'],
+      name: map['name'],
+      description: map['description'],
+      authorId: map['authorId'],
+      themes: List<String>.from(map['themes'] ?? []),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'authorId': authorId,
+      'themes': themes,
+    };
+  }
 }

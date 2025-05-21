@@ -1,5 +1,7 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:final_project/controllers/course_controller.dart';
 import 'package:final_project/controllers/enrollment_controller.dart';
+import 'package:final_project/core/config/db_helper.dart';
 import 'package:final_project/models/enrollment.dart';
 import 'package:final_project/pages/course_progress_page.dart';
 import 'package:flutter/material.dart';
@@ -43,23 +45,45 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
     if (isEnrolled) _loadSectionsAndMaterials();
   }
 
+  Future<bool> isOffline() async {
+    var connectivityResult = await Connectivity().checkConnectivity();
+    return connectivityResult == ConnectivityResult.none;
+  }
+
   Future<void> _loadSectionsAndMaterials() async {
     try {
-      final fetchedSections =
-          await courseController.getSectionsByCourseId(widget.course.id);
-      final materialsMap = <String, List<CourseMaterial>>{};
+      final offline = await isOffline();
 
-      for (final section in fetchedSections) {
-        final materials =
-            await courseController.getMaterialsBySectionId(section.id);
-        materialsMap[section.id] = materials;
+      if (offline) {
+        final db = DBHelper();
+        final fetchedSections = await db.getSectionsByCourseId(widget.course.id);
+        final materialsMap = <String, List<CourseMaterial>>{};
+
+        for (final section in fetchedSections) {
+          final materials = await db.getMaterialsBySectionId(section.id);
+          materialsMap[section.id] = materials;
+        }
+
+        setState(() {
+          sections = fetchedSections;
+          materialsBySection = materialsMap;
+          isLoading = false;
+        });
+      } else {
+        final fetchedSections = await courseController.getSectionsByCourseId(widget.course.id);
+        final materialsMap = <String, List<CourseMaterial>>{};
+
+        for (final section in fetchedSections) {
+          final materials = await courseController.getMaterialsBySectionId(section.id);
+          materialsMap[section.id] = materials;
+        }
+
+        setState(() {
+          sections = fetchedSections;
+          materialsBySection = materialsMap;
+          isLoading = false;
+        });
       }
-
-      setState(() {
-        sections = fetchedSections;
-        materialsBySection = materialsMap;
-        isLoading = false;
-      });
     } catch (e) {
       print('Error loading data: $e');
       setState(() => isLoading = false);
@@ -103,6 +127,20 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
     }
   }
 
+  Future<void> downloadCourse(Course course, List<Section> sections, Map<String, List<CourseMaterial>> materialsBySection) async {
+    final dbHelper = DBHelper();
+
+    await dbHelper.insertCourse(course);
+
+    for (final section in sections) {
+      await dbHelper.insertSection(section);
+      final materials = materialsBySection[section.id] ?? [];
+      for (final material in materials) {
+        await dbHelper.insertMaterial(material);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -140,12 +178,29 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                               ),
                             );
 
-                            await enrollmentController.fetchEnrollments(); // <- refresca al volver
-                            setState(() {}); // fuerza rebuild si es necesario
+                            await enrollmentController.fetchEnrollments();
+                            setState(() {});
                           },
                           icon: const Icon(Icons.pie_chart),
                           label: const Text('Ver Progreso'),
                         ),
+                        const SizedBox(height: 10),
+                          ElevatedButton.icon(
+                            onPressed: () async {
+                              try {
+                                await courseController.downloadCourseToLocal(widget.course.id);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Curso descargado para acceso offline')),
+                                );
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Error al descargar el curso: $e')),
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.download),
+                            label: const Text('Descargar curso'),
+                          ),
                       ],
                     )
             else

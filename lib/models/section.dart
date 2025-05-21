@@ -42,4 +42,22 @@ class Section {
     'description': description,
     'courseId': courseId,
   };
+
+  factory Section.fromMap(Map<String, dynamic> map) {
+    return Section(
+      id: map['id'],
+      courseId: map['courseId'],
+      name: map['name'],
+      description: map['description'],
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'courseId': courseId,
+      'name': name,
+      'description': description,
+    };
+  }
 }

@@ -37,10 +37,30 @@ class CourseMaterial {
     );
   }
 
+  factory CourseMaterial.fromMap(Map<String, dynamic> map) {
+    return CourseMaterial(
+      id: map['id'],
+      title: map['title'],
+      url: map['url'],
+      sizeBytes: map['sizeBytes'],
+      sectionId: map['sectionId'],
+    );
+  }
+
   Map<String, dynamic> toJson() => {
     'title': title,
     'url': url,
     'sizeBytes': sizeBytes,
     'sectionId': sectionId,
   };
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'url': url,
+      'sizeBytes': sizeBytes,
+      'sectionId': sectionId,
+    };
+  }
 }
