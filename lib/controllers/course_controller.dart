@@ -1,4 +1,3 @@
-import 'package:final_project/core/config/db_helper.dart';
 import 'package:final_project/models/course_material.dart';
 import 'package:final_project/models/section.dart';
 import 'package:final_project/repositories/auth_repository.dart';
@@ -10,9 +9,8 @@ import 'package:final_project/repositories/course_repository.dart';
 class CourseController extends GetxController {
   final CourseRepository repository;
   final AuthRepository authRepository;
-  final DBHelper localDbHelper;
 
-  CourseController({required this.repository, required this.authRepository, required this.localDbHelper,});
+  CourseController({required this.repository, required this.authRepository});
 
   final RxList<Course> courses = <Course>[].obs;
   final RxBool isLoading = false.obs;
@@ -189,60 +187,6 @@ class CourseController extends GetxController {
     } catch (e) {
       error.value = e.toString();
       return [];
-    }
-  }
-
-  Future<void> downloadCourseToLocal(String courseId) async {
-    try {
-      isLoading.value = true;
-      error.value = '';
-
-      final courses = await repository.getCoursesByIds([courseId]);
-      if (courses.isEmpty) throw Exception('Curso no encontrado');
-      final course = courses.first;
-
-      final sections = await repository.getSectionsByCourseId(courseId);
-
-      final List<CourseMaterial> allMaterials = [];
-      for (final section in sections) {
-        final materials = await repository.getMaterialsBySectionId(section.id);
-        allMaterials.addAll(materials);
-      }
-
-      await localDbHelper.insertCourse(course);
-      for (final section in sections) {
-        await localDbHelper.insertSection(section);
-      }
-      for (final material in allMaterials) {
-        await localDbHelper.insertMaterial(material);
-      }
-    } catch (e) {
-      error.value = 'Error al descargar el curso: $e';
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<void> loadCoursesFromLocal({required String userId, required bool isAdmin}) async {
-    isLoading.value = true;
-    final db = DBHelper();
-
-    try {
-      final localCourses = await db.getCourses();
-      final userEnrollments = await db.getEnrollmentsByUser(userId);//Parece que controller requiere este metodo que no existe
-
-      if (!isAdmin) {
-        final enrolledIds = userEnrollments.map((e) => e['courseId'] as String).toList();
-        courses.value = localCourses.where((c) => enrolledIds.contains(c.id)).toList();
-      } else {
-        courses.value = localCourses;
-      }
-
-      error.value = '';
-    } catch (e) {
-      error.value = 'Error cargando cursos offline: $e';
-    } finally {
-      isLoading.value = false;
     }
   }
 }

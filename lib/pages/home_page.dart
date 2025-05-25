@@ -1,4 +1,3 @@
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:final_project/controllers/enrollment_controller.dart';
 import 'package:final_project/models/course_material.dart';
 import 'package:final_project/pages/course_card.dart';
@@ -30,11 +29,6 @@ class _HomePageState extends State<HomePage> {
   bool isAdmin = false;
   List<String> enrolledCourseIds = [];
 
-  Future<bool> isOffline() async {
-    var connectivityResult = await Connectivity().checkConnectivity();
-    return connectivityResult == ConnectivityResult.none;
-  }
-
   @override
   void initState() {
     super.initState();
@@ -51,20 +45,15 @@ class _HomePageState extends State<HomePage> {
         isAdmin = role == 'admin';
       });
 
-      final offline = await isOffline();
-
-      if (offline) {
-        // Si estás offline, cargar cursos desde SQLite
-        await courseController.loadCoursesFromLocal(userId: userId, isAdmin: isAdmin);
+      if (isAdmin) {
+        await courseController.fetchCourses();
       } else {
-        if (isAdmin) {
-          await courseController.fetchCourses(); // Appwrite
-        } else {
-          await enrollmentController.fetchEnrollments(); // Appwrite
-          enrolledCourseIds =
-              enrollmentController.enrollments.map((e) => e.courseId).toList();
-          await courseController.fetchCoursesByIds(enrolledCourseIds); // Appwrite
-        }
+        await enrollmentController.fetchEnrollments();
+
+        enrolledCourseIds =
+            enrollmentController.enrollments.map((e) => e.courseId).toList();
+
+        await courseController.fetchCoursesByIds(enrolledCourseIds);
       }
     } else {
       debugPrint('Usuario no autenticado');

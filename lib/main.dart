@@ -3,7 +3,6 @@ import 'package:final_project/controllers/course_controller.dart';
 import 'package:final_project/controllers/enrollment_controller.dart';
 import 'package:final_project/controllers/user_controller.dart';
 import 'package:final_project/core/config/app_config.dart';
-import 'package:final_project/core/config/db_helper.dart';
 import 'package:final_project/repositories/course_repository.dart';
 import 'package:final_project/repositories/enrollment_repository.dart';
 import 'package:final_project/repositories/user_repository.dart';
@@ -24,9 +23,8 @@ void main() {
   Get.put(EnrollmentRepository(databases));
   Get.put(AuthRepository(account, databases));
   Get.put(AuthController(Get.find()));
-  Get.put(DBHelper());
   
-  Get.put(CourseController(repository: Get.find(), authRepository: Get.find(), localDbHelper: Get.find()));
+  Get.put(CourseController(repository: Get.find(), authRepository: Get.find()));
   Get.put(UserController(repository: Get.find(), authRepository: Get.find()));
   Get.put(EnrollmentController(repository: Get.find(), authRepository: Get.find(), courseRepository: Get.find()));
   
