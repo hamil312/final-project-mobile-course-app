@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 
 import 'package:final_project/models/course.dart';
 import 'package:final_project/repositories/course_repository.dart';
+import 'package:hive/hive.dart';
 
 class CourseController extends GetxController {
   final CourseRepository repository;
@@ -188,5 +189,9 @@ class CourseController extends GetxController {
       error.value = e.toString();
       return [];
     }
+  }
+  List<Course> getDownloadedCourses() {
+    final box = Hive.box<Course>('coursesBox');
+    return box.values.toList();
   }
 }

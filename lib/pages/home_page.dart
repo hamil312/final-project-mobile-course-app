@@ -1,15 +1,18 @@
 import 'package:final_project/controllers/enrollment_controller.dart';
+import 'package:final_project/models/course.dart';
 import 'package:final_project/models/course_material.dart';
 import 'package:final_project/pages/course_card.dart';
 import 'package:final_project/pages/creation_page.dart';
+import 'package:final_project/pages/offline_course_detail_page.dart';
 import 'package:final_project/pages/update_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:final_project/controllers/auth_controller.dart';
 import 'package:final_project/controllers/course_controller.dart';
+import 'package:hive/hive.dart';
 
-enum ViewMode { myCourses, feed }
+enum ViewMode { myCourses, feed, downloaded }
 
 ViewMode currentView = ViewMode.myCourses;
 
@@ -79,12 +82,18 @@ class _HomePageState extends State<HomePage> {
           if (controller.isLoading.value) {
             return const Center(child: CircularProgressIndicator());
           }
-          final coursesToShow = controller.courses.where((course) {
-            if (currentView == ViewMode.myCourses && !isAdmin) {
-              return enrolledCourseIds.contains(course.id);
-            }
-            return true;
-          }).toList();
+          List<Course> coursesToShow = [];
+
+          if (currentView == ViewMode.myCourses && !isAdmin) {
+            coursesToShow = controller.courses
+                .where((course) => enrolledCourseIds.contains(course.id))
+                .toList();
+          } else if (currentView == ViewMode.feed || isAdmin) {
+            coursesToShow = controller.courses;
+          } else if (currentView == ViewMode.downloaded) {
+            final box = Hive.box<Course>('coursesBox');
+            coursesToShow = box.values.toList();
+          }
 
           return Column(
             children: [
@@ -131,6 +140,18 @@ class _HomePageState extends State<HomePage> {
                     ),
                     child: const Text('Explorar cursos'),
                   ),
+                  if(!isAdmin)
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() => currentView = ViewMode.downloaded);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: currentView == ViewMode.downloaded
+                          ? Theme.of(context).primaryColor
+                          : Colors.grey,
+                    ),
+                    child: const Text('Cursos descargados'),
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -140,6 +161,8 @@ class _HomePageState extends State<HomePage> {
                   itemBuilder: (context, index) {
                     final course = coursesToShow[index];
 
+                    final bool isDownloaded = currentView == ViewMode.downloaded;
+
                     return Stack(
                       children: [
                         CourseCard(
@@ -147,6 +170,16 @@ class _HomePageState extends State<HomePage> {
                           userId: userId,
                           isAdmin: isAdmin,
                           enrolledCourseIds: enrolledCourseIds,
+                          onTap: isDownloaded
+                              ? () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => OfflineCourseDetailPage(courseId: course.id),
+                                    ),
+                                  );
+                                }
+                              : null,
                         ),
                         if (isAdmin)
                           Positioned(
@@ -164,10 +197,10 @@ class _HomePageState extends State<HomePage> {
                                   }
 
                                   Get.to(() => CourseEditor(
-                                    course: course,
-                                    initialSections: sections,
-                                    initialSectionMaterials: sectionMaterials,
-                                  ));
+                                        course: course,
+                                        initialSections: sections,
+                                        initialSectionMaterials: sectionMaterials,
+                                      ));
                                 } else if (value == 'delete') {
                                   showDialog(
                                     context: context,

@@ -3,6 +3,9 @@ import 'package:final_project/controllers/course_controller.dart';
 import 'package:final_project/controllers/enrollment_controller.dart';
 import 'package:final_project/controllers/user_controller.dart';
 import 'package:final_project/core/config/app_config.dart';
+import 'package:final_project/models/course.dart';
+import 'package:final_project/models/course_material.dart';
+import 'package:final_project/models/section.dart';
 import 'package:final_project/repositories/course_repository.dart';
 import 'package:final_project/repositories/enrollment_repository.dart';
 import 'package:final_project/repositories/user_repository.dart';
@@ -11,25 +14,38 @@ import 'package:get/get.dart';
 import 'package:final_project/repositories/auth_repository.dart';
 import 'package:final_project/controllers/auth_controller.dart';
 import 'package:final_project/pages/splash_page.dart';
-void main() {
-  WidgetsFlutterBinding.ensureInitialized();
+import 'package:hive_flutter/hive_flutter.dart';
 
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+
+  // Registra los adapters
+  Hive.registerAdapter(CourseAdapter());
+  Hive.registerAdapter(SectionAdapter());
+  Hive.registerAdapter(CourseMaterialAdapter());
+
+  // Abre las cajas
+  await Hive.openBox<Course>('coursesBox');
+  await Hive.openBox<Section>('sectionsBox');
+  await Hive.openBox<CourseMaterial>('materialsBox');
+
+  // Inicializa Appwrite
   final client = AppwriteConfig.initClient();
   final databases = Databases(client);
   final account = Account(client);
 
+  // Inyección de dependencias
   Get.put(CourseRepository(databases));
   Get.put(UserRepository(databases));
   Get.put(EnrollmentRepository(databases));
   Get.put(AuthRepository(account, databases));
   Get.put(AuthController(Get.find()));
-  
   Get.put(CourseController(repository: Get.find(), authRepository: Get.find()));
   Get.put(UserController(repository: Get.find(), authRepository: Get.find()));
   Get.put(EnrollmentController(repository: Get.find(), authRepository: Get.find(), courseRepository: Get.find()));
-  
 
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {

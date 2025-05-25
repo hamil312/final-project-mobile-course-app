@@ -7,6 +7,7 @@ import 'package:final_project/models/course.dart';
 import 'package:final_project/models/section.dart';
 import 'package:final_project/models/course_material.dart';
 import 'package:get/get.dart';
+import 'package:hive/hive.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class CourseDetailPage extends StatefulWidget {
@@ -103,6 +104,37 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
     }
   }
 
+  Future<void> _downloadCourseToLocal() async {
+    try {
+      final courseBox = Hive.box<Course>('coursesBox');
+      final sectionBox = Hive.box<Section>('sectionsBox');
+      final materialBox = Hive.box<CourseMaterial>('materialsBox');
+
+      final courseId = widget.course.id;
+      await courseBox.put(courseId, widget.course);
+
+      if (sections.isEmpty || materialsBySection.isEmpty) {
+        await _loadSectionsAndMaterials();
+      }
+
+      for (final section in sections) {
+        await sectionBox.put(section.id, section);
+        final materials = materialsBySection[section.id] ?? [];
+        for (final material in materials) {
+          await materialBox.put(material.id, material);
+        }
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Curso descargado correctamente')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al descargar el curso: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -145,6 +177,13 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                           },
                           icon: const Icon(Icons.pie_chart),
                           label: const Text('Ver Progreso'),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            await _downloadCourseToLocal();
+                          },
+                          icon: const Icon(Icons.download),
+                          label: const Text('Descargar curso'),
                         ),
                       ],
                     )

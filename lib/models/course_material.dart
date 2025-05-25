@@ -1,8 +1,18 @@
-class CourseMaterial {
+import 'package:hive/hive.dart';
+
+part 'course_material.g.dart';
+
+@HiveType(typeId: 2)
+class CourseMaterial extends HiveObject {
+  @HiveField(0)
   final String id;
+  @HiveField(1)
   final String title;
+  @HiveField(2)
   final String url;
+  @HiveField(3)
   final int sizeBytes;
+  @HiveField(4)
   final String sectionId;
 
   CourseMaterial({

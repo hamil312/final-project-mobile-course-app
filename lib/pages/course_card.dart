@@ -7,6 +7,7 @@ class CourseCard extends StatelessWidget {
   final String? userId;
   final bool isAdmin;
   final List<String> enrolledCourseIds;
+  final VoidCallback? onTap;
 
   const CourseCard({
     super.key,
@@ -14,6 +15,7 @@ class CourseCard extends StatelessWidget {
     required this.userId,
     required this.isAdmin,
     required this.enrolledCourseIds,
+    this.onTap,
   });
 
   @override
@@ -43,19 +45,20 @@ class CourseCard extends StatelessWidget {
             Text(course.description),
           ],
         ),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CourseDetailPage(
-                course: course,
-                userId: userId,
-                isAdmin: isAdmin,
-                enrolledCourseIds: enrolledCourseIds,
-              ),
-            ),
-          );
-        },
+        onTap: onTap ??
+            () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CourseDetailPage(
+                    course: course,
+                    userId: userId,
+                    isAdmin: isAdmin,
+                    enrolledCourseIds: enrolledCourseIds,
+                  ),
+                ),
+              );
+            },
       ),
     );
   }

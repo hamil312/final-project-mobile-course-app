@@ -1,9 +1,17 @@
 import 'package:final_project/models/course_material.dart';
+import 'package:hive/hive.dart';
 
-class Section {
+part 'section.g.dart';
+
+@HiveType(typeId: 1)
+class Section extends HiveObject {
+  @HiveField(0)
   final String id;
+  @HiveField(1)
   final String courseId;
+  @HiveField(2)
   final String name;
+  @HiveField(3)
   final String description;
 
   Section({
