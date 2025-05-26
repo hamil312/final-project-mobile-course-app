@@ -20,22 +20,18 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
 
-  // Registra los adapters
   Hive.registerAdapter(CourseAdapter());
   Hive.registerAdapter(SectionAdapter());
   Hive.registerAdapter(CourseMaterialAdapter());
 
-  // Abre las cajas
   await Hive.openBox<Course>('coursesBox');
   await Hive.openBox<Section>('sectionsBox');
   await Hive.openBox<CourseMaterial>('materialsBox');
 
-  // Inicializa Appwrite
   final client = AppwriteConfig.initClient();
   final databases = Databases(client);
   final account = Account(client);
 
-  // Inyección de dependencias
   Get.put(CourseRepository(databases));
   Get.put(UserRepository(databases));
   Get.put(EnrollmentRepository(databases));
