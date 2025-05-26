@@ -163,28 +163,30 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                       children: [
                         _buildSections(),
                         const SizedBox(height: 20),
-                        ElevatedButton.icon(
-                          onPressed: () async {
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => CourseProgressPage(courseId: widget.course.id),
-                              ),
-                            );
+                        if(!widget.isAdmin)
+                          ElevatedButton.icon(
+                            onPressed: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => CourseProgressPage(courseId: widget.course.id),
+                                ),
+                              );
 
-                            await enrollmentController.fetchEnrollments();
-                            setState(() {});
-                          },
-                          icon: const Icon(Icons.pie_chart),
-                          label: const Text('Ver Progreso'),
-                        ),
-                        ElevatedButton.icon(
-                          onPressed: () async {
-                            await _downloadCourseToLocal();
-                          },
-                          icon: const Icon(Icons.download),
-                          label: const Text('Descargar curso'),
-                        ),
+                              await enrollmentController.fetchEnrollments();
+                              setState(() {});
+                            },
+                            icon: const Icon(Icons.pie_chart),
+                            label: const Text('Ver Progreso'),
+                          ),
+                        if(!widget.isAdmin)
+                          ElevatedButton.icon(
+                            onPressed: () async {
+                              await _downloadCourseToLocal();
+                            },
+                            icon: const Icon(Icons.download),
+                            label: const Text('Descargar curso'),
+                          ),
                       ],
                     )
             else

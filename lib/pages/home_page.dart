@@ -69,6 +69,12 @@ class _HomePageState extends State<HomePage> {
       debugPrint('Usuario no autenticado');
       Get.find<AuthController>().logout();
     }
+    if (isAdmin) {
+      setState(() {
+        currentView = ViewMode.myCourses;
+      });
+      await courseController.fetchCourses();
+    }
   }
 
   Future<bool> hasInternetConnection() async {
@@ -116,7 +122,7 @@ class _HomePageState extends State<HomePage> {
                   ? Theme.of(context).secondaryHeaderColor
                   : Colors.grey,
             ),
-            child: const Text('Explorar cursos'),
+            child: const Text('Descubrir'),
           ),
         const SizedBox(width: 8),
         if (!isAdmin)
@@ -129,7 +135,7 @@ class _HomePageState extends State<HomePage> {
                   ? Theme.of(context).secondaryHeaderColor
                   : Colors.grey,
             ),
-            child: const Text('Cursos descargados'),
+            child: const Text('Descargados'),
           ),
       ],
     );

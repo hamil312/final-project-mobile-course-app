@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:appwrite/appwrite.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:final_project/core/constants/appwrite_constants.dart';
@@ -60,36 +63,54 @@ class _AddSectionFormState extends State<AddSectionForm> {
   }
 
   Future<void> _pickAndUploadFile() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+      withData: true, 
+    );
 
-    if (result != null && result.files.single.bytes != null) {
-      final fileBytes = result.files.single.bytes!;
-      final fileName = result.files.single.name;
+    if (result != null) {
+      final file = result.files.single;
 
-      try {
-        final response = await storage.createFile(
-          bucketId: AppwriteConstants.bucketId,
-          fileId: ID.unique(),
-          file: InputFile.fromBytes(
-            bytes: fileBytes,
-            filename: fileName,
-          ),
-        );
+      Uint8List? fileBytes = file.bytes;
 
-        final url = 'https://fra.cloud.appwrite.io/v1/storage/buckets/${AppwriteConstants.bucketId}/files/${response.$id}/view?project=${AppwriteConstants.projectId}&mode=admin';
+      if (fileBytes == null && file.path != null) {
+        final fileFromPath = await File(file.path!).readAsBytes();
+        fileBytes = fileFromPath;
+      }
 
-        setState(() {
-          materials.add(CourseMaterial(
-            id: '',
-            title: fileName,
-            url: url,
-            sizeBytes: fileBytes.length,
-            sectionId: '',
-          ));
-        });
-      } catch (e) {
+      if (fileBytes != null) {
+        final fileName = file.name;
+
+        try {
+          final response = await storage.createFile(
+            bucketId: AppwriteConstants.bucketId,
+            fileId: ID.unique(),
+            file: InputFile.fromBytes(
+              bytes: fileBytes,
+              filename: fileName,
+            ),
+          );
+
+          final url = 'https://fra.cloud.appwrite.io/v1/storage/buckets/${AppwriteConstants.bucketId}/files/${response.$id}/view?project=${AppwriteConstants.projectId}&mode=admin';
+
+          setState(() {
+            materials.add(CourseMaterial(
+              id: '',
+              title: fileName,
+              url: url,
+              sizeBytes: fileBytes!.length,
+              sectionId: '',
+            ));
+          });
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error al subir archivo: $e')),
+          );
+        }
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al subir archivo: $e')),
+          const SnackBar(content: Text('No se pudieron obtener los bytes del archivo.')),
         );
       }
     }

@@ -129,10 +129,6 @@ class _CourseEditorState extends State<CourseEditor> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => Get.find<AuthController>().logout(),
-          ),
-          IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Get.back(),
           )
         ],
       ),
