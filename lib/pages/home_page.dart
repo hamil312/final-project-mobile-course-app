@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:final_project/controllers/enrollment_controller.dart';
 import 'package:final_project/models/course.dart';
 import 'package:final_project/models/course_material.dart';
@@ -39,6 +40,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> initializeData() async {
+    final isConnected = await hasInternetConnection();
+    if (!isConnected && currentView != ViewMode.downloaded) {
+      setState(() {
+        Get.find<CourseController>().error.value = 'Sin conexión a internet';
+      });
+      return;
+    }
+
     final user = await authController.getUserId();
     final role = await authController.getCurrentUserRole();
 
@@ -52,16 +61,78 @@ class _HomePageState extends State<HomePage> {
         await courseController.fetchCourses();
       } else {
         await enrollmentController.fetchEnrollments();
-
         enrolledCourseIds =
             enrollmentController.enrollments.map((e) => e.courseId).toList();
-
         await courseController.fetchCoursesByIds(enrolledCourseIds);
       }
     } else {
       debugPrint('Usuario no autenticado');
       Get.find<AuthController>().logout();
     }
+  }
+
+  Future<bool> hasInternetConnection() async {
+    final result = await Connectivity().checkConnectivity();
+    return result != ConnectivityResult.none;
+  }
+
+  Widget _buildNavigationButtons(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        ElevatedButton(
+          onPressed: () async {
+            setState(() => currentView = ViewMode.myCourses);
+            if (await hasInternetConnection()) {
+              if (isAdmin) {
+                courseController.fetchCourses();
+              } else {
+                courseController.fetchCoursesByIds(enrolledCourseIds);
+              }
+            } else {
+              courseController.error.value = 'Sin conexión a internet';
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: currentView == ViewMode.myCourses
+                ? Theme.of(context).secondaryHeaderColor
+                : Colors.grey,
+          ),
+          child: const Text('Mis cursos'),
+        ),
+        const SizedBox(width: 8),
+        if (!isAdmin)
+          ElevatedButton(
+            onPressed: () async {
+              setState(() => currentView = ViewMode.feed);
+              if (await hasInternetConnection()) {
+                courseController.fetchAllCourses();
+              } else {
+                courseController.error.value = 'Sin conexión a internet';
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: currentView == ViewMode.feed
+                  ? Theme.of(context).secondaryHeaderColor
+                  : Colors.grey,
+            ),
+            child: const Text('Explorar cursos'),
+          ),
+        const SizedBox(width: 8),
+        if (!isAdmin)
+          ElevatedButton(
+            onPressed: () {
+              setState(() => currentView = ViewMode.downloaded);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: currentView == ViewMode.downloaded
+                  ? Theme.of(context).secondaryHeaderColor
+                  : Colors.grey,
+            ),
+            child: const Text('Cursos descargados'),
+          ),
+      ],
+    );
   }
 
   @override
@@ -80,7 +151,13 @@ class _HomePageState extends State<HomePage> {
       body: GetX<CourseController>(
         builder: (controller) {
           if (controller.isLoading.value) {
-            return const Center(child: CircularProgressIndicator());
+            return Column(
+              children: [
+                _buildNavigationButtons(context),
+                const SizedBox(height: 20),
+                const CircularProgressIndicator(),
+              ],
+            );
           }
           List<Course> coursesToShow = [];
 
@@ -107,53 +184,7 @@ class _HomePageState extends State<HomePage> {
                   'Error: ${controller.error.value}',
                   style: const TextStyle(color: Colors.red),
                 ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() => currentView = ViewMode.myCourses);
-                      if (isAdmin) {
-                        courseController.fetchCourses();
-                      } else {
-                        courseController.fetchCoursesByIds(enrolledCourseIds);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: currentView == ViewMode.myCourses
-                          ? Theme.of(context).primaryColor
-                          : Colors.grey,
-                    ),
-                    child: const Text('Mis cursos'),
-                  ),
-                  const SizedBox(width: 8),
-                  if (!isAdmin)
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() => currentView = ViewMode.feed);
-                      courseController.fetchAllCourses();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: currentView == ViewMode.feed
-                          ? Theme.of(context).primaryColor
-                          : Colors.grey,
-                    ),
-                    child: const Text('Explorar cursos'),
-                  ),
-                  if(!isAdmin)
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() => currentView = ViewMode.downloaded);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: currentView == ViewMode.downloaded
-                          ? Theme.of(context).primaryColor
-                          : Colors.grey,
-                    ),
-                    child: const Text('Cursos descargados'),
-                  ),
-                ],
-              ),
+              _buildNavigationButtons(context),
               const SizedBox(height: 8),
               Expanded(
                 child: ListView.builder(

@@ -172,8 +172,8 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                               ),
                             );
 
-                            await enrollmentController.fetchEnrollments(); // <- refresca al volver
-                            setState(() {}); // fuerza rebuild si es necesario
+                            await enrollmentController.fetchEnrollments();
+                            setState(() {});
                           },
                           icon: const Icon(Icons.pie_chart),
                           label: const Text('Ver Progreso'),

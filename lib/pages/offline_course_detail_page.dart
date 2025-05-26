@@ -56,13 +56,15 @@ class OfflineCourseDetailPage extends StatelessWidget {
                   section.name,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
+                subtitle: Text(
+                  section.description
+                ),
                 children: materials.map((material) {
                   return ListTile(
                     title: Text(material.url),
                     subtitle: Text(material.title),
                     trailing: const Icon(Icons.picture_as_pdf),
                     onTap: () {
-                      // Aquí podrías mostrar el archivo si está disponible localmente
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Abrir archivo: ${material.title}')),
                       );
