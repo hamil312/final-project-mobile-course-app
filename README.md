@@ -45,7 +45,7 @@ flutter pub get
 ### Credenciales de Appwrite
 
 Pegar esto en un archivo .env en la raíz del proyecto
-
+```env
 APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
 APPWRITE_PROJECT_ID=67e47f2e00348f8e6c7c
 APPWRITE_DATABASE_ID=67e4801100030243f1fa
@@ -55,6 +55,7 @@ COLLECTION_SECTIONS=68065e50003b2cc2c7c9
 COLLECTION_MATERIALS=68065fe9000045205d3b
 COLLECTION_USERS=68169008003b3fc8eb6e
 COLLECTION_ENROLLMENTS=6816cac400126da19702
+```
 
 ### Información Necesaria para el Funcionamiento
 
@@ -133,6 +134,7 @@ flutter:
 
 Probé la aplicación en un emulador con las siguientes características:
 
+```
 Properties
 avd.ini.displayname              Pixel 8 API 36
 avd.ini.encoding                 UTF-8
@@ -179,3 +181,4 @@ tag.displaynames                 Google Play
 tag.id                           google_apis_playstore
 tag.ids                          google_apis_playstore
 vm.heapSize                      228
+```
