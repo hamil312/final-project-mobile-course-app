@@ -1,10 +1,11 @@
 import 'package:appwrite/appwrite.dart';
 import 'package:final_project/core/constants/appwrite_constants.dart';
 import 'package:final_project/models/user.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class UserRepository {
   final Databases databases;
-  static const String collectionId = '68169008003b3fc8eb6e';
+  static final String collectionId = dotenv.env['COLLECTION_USERS']!;
 
   UserRepository(this.databases);
 

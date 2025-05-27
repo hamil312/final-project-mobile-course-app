@@ -20,7 +20,7 @@ class SplashPage extends StatelessWidget {
   void _checkAuth(AuthController authController) async {
     await Future.delayed(
       Duration(seconds: 1),
-    ); // Optional: minimum splash duration
+    );
     final isLoggedIn = await authController.checkAuth();
 
     if (isLoggedIn) {

@@ -3,12 +3,13 @@ import 'package:final_project/core/constants/appwrite_constants.dart';
 import 'package:final_project/models/course.dart';
 import 'package:final_project/models/course_material.dart';
 import 'package:final_project/models/section.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class CourseRepository {
   final Databases databases;
-  static const String collectionId = '680661ad000b25f4a2cb';
-  static const String sectionsCollectionId = '68065e50003b2cc2c7c9';
-  static const String materialsCollectionId = '68065fe9000045205d3b';
+  static final String collectionId = dotenv.env['COLLECTION_COURSES']!;
+  static final String sectionsCollectionId = dotenv.env['COLLECTION_SECTIONS']!;
+  static final String materialsCollectionId = dotenv.env['COLLECTION_MATERIALS']!;
 
   CourseRepository(this.databases);
 
@@ -191,7 +192,7 @@ class CourseRepository {
   Future<List<CourseMaterial>> getMaterialsForCourse(String courseId) async {
     final response = await databases.listDocuments(
       databaseId: AppwriteConstants.databaseId,
-      collectionId: '68065fe9000045205d3b',
+      collectionId: materialsCollectionId,
       queries: [
         Query.equal('courseId', courseId),
       ],

@@ -1,5 +1,6 @@
 import 'package:appwrite/appwrite.dart';
 import 'package:final_project/core/constants/appwrite_constants.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AuthRepository {
   final Account account;
@@ -65,7 +66,7 @@ class AuthRepository {
     try {
       final response = await databases.listDocuments(
         databaseId: AppwriteConstants.databaseId,
-        collectionId: '68169008003b3fc8eb6e',
+        collectionId: dotenv.env['COLLECTION_USERS']!,
         queries: [Query.equal('userId', userId)],
       );
 

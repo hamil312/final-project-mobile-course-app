@@ -1,10 +1,11 @@
 import 'package:appwrite/appwrite.dart';
 import 'package:final_project/core/constants/appwrite_constants.dart';
 import 'package:final_project/models/section.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SectionRepository {
   final Databases databases;
-  static const String collectionId = '68065e50003b2cc2c7c9';
+  static final String collectionId = dotenv.env['COLLECTION_SECTIONS']!;
 
   SectionRepository(this.databases);
 

@@ -1,10 +1,11 @@
 import 'package:appwrite/appwrite.dart';
 import 'package:final_project/core/constants/appwrite_constants.dart';
 import 'package:final_project/models/course_material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class CourseMaterialRepository {
   final Databases databases;
-  static const String collectionId = '68065fe9000045205d3b';
+  static final String collectionId = dotenv.env['COLLECTION_MATERIALS']!;
 
   CourseMaterialRepository(this.databases);
 

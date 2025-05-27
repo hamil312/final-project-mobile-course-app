@@ -1,10 +1,11 @@
 import 'package:appwrite/appwrite.dart';
 import 'package:final_project/core/constants/appwrite_constants.dart';
 import 'package:final_project/models/enrollment.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class EnrollmentRepository {
   final Databases databases;
-  static const String collectionId = '6816cac400126da19702';
+  static final String collectionId = dotenv.env['COLLECTION_ENROLLMENTS']!;
 
   EnrollmentRepository(this.databases);
 

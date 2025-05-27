@@ -15,8 +15,10 @@ import 'package:final_project/repositories/auth_repository.dart';
 import 'package:final_project/controllers/auth_controller.dart';
 import 'package:final_project/pages/splash_page.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
+  await dotenv.load(fileName: ".env");
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
 
